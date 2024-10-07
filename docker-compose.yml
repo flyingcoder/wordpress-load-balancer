@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # MySQL database
+  db:
+    image: mysql:8.0
+    container_name: wp-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wp-network
+
+  # WordPress instance 1
+  wordpress1:
+    build: ./wordpress
+    container_name: wordpress1
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./wordpress:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - wp-network
+
+  # WordPress instance 2
+  wordpress2:
+    build: ./wordpress
+    container_name: wordpress2
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./wordpress:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - wp-network
+
+  # Nginx load balancer
+  nginx:
+    build: ./nginx
+    container_name: nginx-loadbalancer
+    ports:
+      - "80:80"
+    depends_on:
+      - wordpress1
+      - wordpress2
+    networks:
+      - wp-network
+
+volumes:
+  db_data:
+
+networks:
+  wp-network:
+    driver: bridge
